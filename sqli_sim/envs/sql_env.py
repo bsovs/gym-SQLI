@@ -59,7 +59,7 @@ class CTFSQLEnv0(gym.Env):
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, actions=51, escapes=3, columns=5):
+    def __init__(self, escapes=3, columns=5):
         # Init action space
         self.space = ActionSpace(escapes, columns)
         self.actions = self.space.actions
@@ -71,7 +71,7 @@ class CTFSQLEnv0(gym.Env):
         self.action_space = spaces.Discrete(self.actions)
 
         # Observation space
-        self.observation_space = spaces.MultiDiscrete(np.ones(actions) * 3)
+        self.observation_space = spaces.MultiDiscrete(np.ones(self.actions) * 3)
 
         self.set_matrix()
 
