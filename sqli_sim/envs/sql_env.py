@@ -29,10 +29,11 @@ class ActionSpace:
         """
         Set the correct escape and column sequence based on the action space
         """
+        # Get the set of actions that are syntactically correct
         self.syntaxmin = 0 + (r * self.offset)
         self.syntaxmax = self.offset + self.syntaxmin
 
-        return [0 + r * self.offset, 1 + r * self.offset, (12 + f) + r * self.offset]
+        return [0 + r * self.offset, 1 + r * self.offset, ((self.columns * 2) + f + 2) + r * self.offset]
 
 
 class CTFSQLEnv0(gym.Env):
@@ -108,12 +109,12 @@ class CTFSQLEnv0(gym.Env):
             self.done = True
             self.state[action] = 2
             return self.state, self.rewards.capture, self.done, {'msg': 'FLAG Server response is 2'}
-        elif (action >= self.syntaxmin and action < self.syntaxmax):
+        elif (action >= self.space.syntaxmin and action < self.space.syntaxmax):
             """ 
             See if the action contains the correct queried row given it is within the space of correct escape sequence
             this row can 
             """
-            if (action == self.flag_cols * 2 + self.setup[1] + 1 or action == self.flag_cols * 2 + self.setup[1] + 2):
+            if (action == self.flag_cols * 2 + self.setup[1] or action == self.flag_cols * 2 + self.setup[1] + 1):
                 if (self.verbose):
                     print('Query with correct number of rows')
                 self.state[action] = 2
@@ -139,9 +140,6 @@ class CTFSQLEnv0(gym.Env):
 
         # The random setup contains the correct escape sequences and the correct SQL injection
         self.setup = self.space.set_sequence(r, f)  # [0 + r * 17, 1 + r * 17, (12 + f) + r * 17]
-
-        # Get the set of actions that are syntactically correct
-        self.syntaxmin, self.syntaxmax = self.space.syntaxmin, self.space.syntaxmax
 
     def reset(self):
         self.done = False
