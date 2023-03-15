@@ -34,12 +34,16 @@ def run(sim_model, n_simulations=10, total_timesteps=10 ** 6):
 
 
 if __name__ == '__main__':
-    env_name = 'sqli_sim-v0'
+    env_name = 'db_sim-v0'
     escapes = 3
-    columns = 8
+    columns = 5
+    db_types = 3
 
-    env = gym.make(env_name, escapes=escapes, columns=columns,
-                   rewards=Reward(capture=10, escape=-1, rows=-1, wrong=-1))
+    env = gym.make(env_name,
+                   escapes=escapes,
+                   columns=columns,
+                   db_types=db_types,
+                   rewards=Reward(capture=10, escape=-1, rows=-1, error=-1, wrong=-1))
 
     n_simulations = 1
     total_timesteps = (10 ** 6)
@@ -52,5 +56,6 @@ if __name__ == '__main__':
     print(
         f"Spaces: escape_space={env.space.escape_space}, "
         f"column_space={env.space.column_space},  "
+        f"db_space={env.space.db_space}, "
         f"capture_space={env.space.capture_space}"
     )

@@ -1,6 +1,13 @@
 import numpy as np
 
 
+def top_n_mean(arr, n):
+    n = min(arr.shape[0], n) - 1
+    temp = np.partition(-arr, n)
+    result = -temp[:n]
+    return np.mean(result)
+
+
 def evaluate(model, env, num_steps=1000, verbose=False):
     episode_rewards = [0.0]
     episode_length = [0]
@@ -21,7 +28,7 @@ def evaluate(model, env, num_steps=1000, verbose=False):
             if (verbose): print("vicory")
 
     mean_reward = round(np.mean(episode_rewards[:-1]), 3)
-    max_reward = round(np.max(episode_rewards), 3)
+    max_reward = round(top_n_mean(np.array(episode_rewards), 100), 3)
 
     return mean_reward, max_reward, np.mean(episode_length[:-1])
 
