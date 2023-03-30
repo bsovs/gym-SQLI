@@ -8,3 +8,7 @@ register(
     id='db_sim-v0',
     entry_point='sqli_sim.envs:CTFSQLEnv1',
 )
+register(
+    id='db_sim-v1',
+    entry_point='sqli_sim.envs:SQLInjectionEnv',
+)

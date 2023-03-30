@@ -1,8 +1,8 @@
 import gym
-from gym import spaces, logger
+from gym import spaces
 from gym.utils import seeding
 import numpy as np
-from sqli_sim.envs.reward import Reward
+from sqli_sim.envs._helper.reward import Reward
 
 
 class ActionSpace:
@@ -74,14 +74,13 @@ class CTFSQLEnv0(gym.Env):
         # Observation space
         self.observation_space = spaces.MultiDiscrete(np.ones(self.actions) * 3)
 
-        self.set_matrix()
-
         self.done = False
         self.verbose = False
         if (self.verbose): print('Game setup with a random query')
 
         self.seed()
         self.viewer = None
+        self.reset()
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -89,6 +88,10 @@ class CTFSQLEnv0(gym.Env):
 
     def step(self, action):
         assert self.action_space.contains(action), "%r (%s) invalid" % (action, type(action))
+
+        self.steps += 1
+        if self.steps > self.actions:
+            self.done = True
 
         """
         0neg
@@ -140,6 +143,7 @@ class CTFSQLEnv0(gym.Env):
 
     def reset(self):
         self.done = False
+        self.steps = 0
 
         # Reinitializing the random query
         self.set_matrix()

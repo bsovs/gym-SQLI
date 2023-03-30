@@ -1,12 +1,8 @@
-import sys
-import numpy as np
-
-from sqli_sim.envs.reward import Reward
+from sqli_sim.envs._helper.reward import Reward
 from utils import evaluate as ev
 from tqdm import tqdm
 from stable_baselines3 import DQN
 import gym
-import sqli_sim
 
 
 # Evaluate the mean reward given from the simulations

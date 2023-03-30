@@ -1,12 +1,8 @@
-import sys
-import numpy as np
-
-from sqli_sim.envs.reward import Reward
+from sqli_sim.envs._helper.reward import Reward
 from utils import evaluate as ev
 from tqdm import tqdm
 from stable_baselines3 import DQN
 import gym
-import sqli_sim
 
 
 # Evaluate the mean reward given from the simulations
@@ -14,7 +10,8 @@ import sqli_sim
 def evaluate(sim_model, n_simulations, total_timesteps):
     for i in tqdm(range(n_simulations)):
         mean_reward, max_rewards, episode_length = ev.evaluate(
-            sim_model[i].load('tests/out/sim_{0}_for_escapes_{1}_columns_{2}'.format(str(i), escapes, columns)),
+            sim_model[i].load(
+                'tests/out/sim_db_{0}_for_escapes_{1}_columns_{2}_db_{1}'.format(str(i), escapes, columns, db_types)),
             env,
             num_steps=total_timesteps)
         print(f'DQN-Model[{i}]: mean reward = {mean_reward}, '
@@ -28,7 +25,8 @@ def run(sim_model, n_simulations=10, total_timesteps=10 ** 6):
 
     for i in tqdm(range(n_simulations)):
         sim_model[i].learn(total_timesteps=total_timesteps)
-        sim_model[i].save('tests/out/sim_{0}_for_escapes_{1}_columns_{2}'.format(str(i), escapes, columns))
+        sim_model[i].save(
+            'tests/out/sim_db_{0}_for_escapes_{1}_columns_{2}_db_{1}'.format(str(i), escapes, columns, db_types))
 
     return sim_model
 

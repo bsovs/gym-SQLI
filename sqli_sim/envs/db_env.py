@@ -1,9 +1,9 @@
 import gym
-from gym import spaces, logger
+from gym import spaces
 from gym.utils import seeding
 import numpy as np
 
-from sqli_sim.envs.reward import Reward
+from sqli_sim.envs._helper.reward import Reward
 
 
 class DBType:

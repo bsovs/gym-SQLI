@@ -18,14 +18,14 @@ def evaluate(model, env, num_steps=1000, verbose=False):
         if (np.shape(action) != ()):
             action = action[0]
             if (verbose): print(action)
-        obs, reward, done, _ = env.step(action)
+        obs, reward, done, _ = env.step(int(action))
         episode_rewards[-1] += reward
         episode_length[-1] += 1
         if done:
             obs = env.reset()
             episode_rewards.append(0.0)
             episode_length.append(0)
-            if (verbose): print("vicory")
+            if (verbose): print("victory")
 
     mean_reward = round(np.mean(episode_rewards[:-1]), 3)
     max_reward = round(top_n_mean(np.array(episode_rewards), 100), 3)
@@ -47,7 +47,7 @@ def evaluate_model(model, env, num_steps=1000, verbose=False):
         if done:
             obs = env.reset()
             episode_rewards.append(0.0)
-            if (verbose): print("vicory")
+            if (verbose): print("victory")
 
     mean_reward = round(np.mean(episode_rewards), 3)
     return mean_reward, len(episode_rewards) - 1
