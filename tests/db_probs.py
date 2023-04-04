@@ -185,12 +185,16 @@ def expected_reward():
     max_reward = flag_reward
     min_reward = wrong_reward
 
+    num_simulations = 10 ** 5
+
     # simulate a smart action scheme where we exploit positive rewards using monte carlo
     # just take one of each escape char until it hits then keep using it to get reward=1
-    random_reward = simulate_random(steps=step_limit, num_actions=num_actions)
-    random_attack = simulate_attack(steps=step_limit, num_actions=num_actions)
-    smart_explore = simulate_smart(steps=step_limit, alpha=0.8, num_actions=num_actions)
-    smart_exploit = simulate_smart(steps=step_limit, alpha=1.0, num_actions=num_actions)
+    random_reward = simulate_random(steps=step_limit, num_actions=num_actions, num_simulations=num_simulations)
+    random_attack = simulate_attack(steps=step_limit, num_actions=num_actions, num_simulations=num_simulations)
+    smart_explore = simulate_smart(steps=step_limit, alpha=0.8, num_actions=num_actions,
+                                   num_simulations=num_simulations)
+    smart_exploit = simulate_smart(steps=step_limit, alpha=1.0, num_actions=num_actions,
+                                   num_simulations=num_simulations)
 
     print()
     print("REWARD SYSTEM")
