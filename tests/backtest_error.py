@@ -7,7 +7,7 @@ import gym
 
 
 # Evaluate the mean reward given from the simulations
-# Expected values should be TODO
+# Expected values should be a positive reward (ie. anything > 0)
 def evaluate(sim_model, n_simulations, total_timesteps):
     for i in tqdm(range(n_simulations)):
         mean_reward, max_rewards, episode_length_mean = ev.evaluate(
@@ -32,7 +32,7 @@ def run(sim_model, n_simulations=10, total_timesteps=10 ** 6):
 
 if __name__ == '__main__':
     env_name = 'db_sim-v1'
-    step_limit = 100
+    step_limit = 10
     reward_limit = 10
     history_length = 4
     attack_values = 100
@@ -43,8 +43,8 @@ if __name__ == '__main__':
                    history_length=history_length,
                    attack_values=attack_values)
 
-    n_simulations = 1
-    total_timesteps = (10 ** 5)
+    n_simulations = 10
+    total_timesteps = (10 ** 6)  # amount of time needed for convergence
 
     model = [
         PPO(env=env,

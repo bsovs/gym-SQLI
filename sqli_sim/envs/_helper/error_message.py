@@ -52,14 +52,26 @@ class Attack:
     ONE_PROB = 0.5
 
     def __init__(self, attack_actions):
-        self.ATTACK_ACTION = [self.generate_attack_string() for _ in range(attack_actions)]
+        self.ATTACK_ACTION = [
+            self.generate_attack_string(escape, table, table_action) for
+            _ in range(attack_actions // (len(ESCAPE_CHAR) + len(TABLES) + len(TABLE_ACTION))) for
+            escape in ESCAPE_CHAR for
+            table in TABLES for
+            table_action in TABLE_ACTION
+        ]
+        self.num_actions = attack_actions // (len(ESCAPE_CHAR) + len(TABLES) + len(TABLE_ACTION))
+        self.attack_map = {
+            (escape, table, table_action, i): self.generate_attack_string(escape, table, table_action) for
+            i in range(self.num_actions) for
+            escape in ESCAPE_CHAR for
+            table in TABLES for
+            table_action in TABLE_ACTION
+        }
+        self.ATTACK_ACTION = list(self.attack_map.values())
         self.TABLE_ACTION = TABLE_ACTION
         self.ACTIONS = self.TABLE_ACTION + self.ATTACK_ACTION
 
-    def generate_attack_string(self):
-        escape_char = random.choice(ESCAPE_CHAR)
-        table = random.choice(TABLES)
-        table_action = random.choice(TABLE_ACTION)
+    def generate_attack_string(self, escape_char, table, table_action):
         where_clause = 'WHERE ' + table + '.id = 1'
         or_clause = 'OR ' + table + '.id = 2'
         drop_clause = 'DROP TABLE ' + table

@@ -18,7 +18,7 @@ class SQLInjectionEnv(gym.Env):
         # Define the action space as a discrete set of SQL injection commands
         self.action_space = spaces.Discrete(self.actions)
         # Define the observation space as a 2D array with shape (n_actions, history_length+1)
-        self.observation_space = spaces.Box(low=0, high=1, shape=(self.actions, history_length + 1), dtype=int)
+        self.observation_space = spaces.Box(low=0, high=1, shape=(self.actions, 4), dtype=int)
 
         self.reward = ErrorReward()
         self.step_limit = step_limit
@@ -32,7 +32,7 @@ class SQLInjectionEnv(gym.Env):
         self.reset()
 
         # Define our error message one-hot encoder
-        self.error_encoder = ErrorEncoder(state=self.state, history_length=history_length)
+        # self.error_encoder = ErrorEncoder(state=self.state, history_length=history_length)
 
     def gen_actions(self):
         self.error_messages = error_messages()
@@ -59,18 +59,21 @@ class SQLInjectionEnv(gym.Env):
         # Convert the action index to a SQL injection command
         (escape, sql_action) = self._index_to_command(action)
         # Simulate the execution of the SQL command and get the resulting error message
-        self.current_error = self._execute_sql(escape, sql_action)
+        error_value, self.current_error = self._execute_sql(escape, sql_action)
         self.error_list.append(self.current_error)
         # Calculate the reward based on the error message
-        self.current_reward = self._calculate_reward(self.current_error)
-        self.total_reward += self.current_reward
+        self.current_reward = self._calculate_reward(action, self.current_error)
+        self.total_reward += max(0, self.current_reward)
 
         # Update observation state
-        self.state = np.roll(self.state, 1, axis=1)  # shift history to the right
-        self.state[action, 0] = 1  # set current action to 1
+        self.state[action, 0] = self.prev_value
+        self.state[action, 1] = self.current_reward
+        self.state[action, 2] = error_value
+        self.prev_value = error_value
+
+        # self.state = np.roll(self.state, 1, axis=1)  # shift history to the right
         # use error_encoder to get error encoding
-        self.state[:, -self.history_length:] = self.error_encoder.get_error_encoding(self.error_list
-                                                                                     )[:, :self.history_length]
+        # self.state[:, -self.history_length:] = self.error_encoder.get_error_encoding(self.error_list)[:, :self.history_length]
 
         # Set done flag to False until enough information is received to inject the database
         self.done = (self.total_reward >= self.reward_limit) or (self.steps >= self.step_limit)
@@ -89,11 +92,14 @@ class SQLInjectionEnv(gym.Env):
         return self._get_observation(), self.current_reward, self.done, info
 
     def reset(self):
+        self.reward = ErrorReward()
+
         # Set new attacks actions
         self.gen_actions()
+        self.prev_value = 0
 
         # Initialize state
-        self.state = np.zeros((self.actions, self.history_length + 1), dtype=np.float32)
+        self.state = np.zeros((self.actions, 4), dtype=np.float32)
         self.error_list = []
 
         # Reset the environment by setting the current error message to None and the current reward to 0
@@ -106,10 +112,24 @@ class SQLInjectionEnv(gym.Env):
         self.db_type = np.random.choice(DATABASES)
 
         # Get the possible escape chars that will work
-        self.escapes = np.random.choice(ESCAPE_CHAR, np.random.randint(1, len(ESCAPE_CHAR)))
+        self.escapes = np.random.choice(ESCAPE_CHAR, np.random.randint(1, len(ESCAPE_CHAR) - 1))
 
-        # Get the injection command
-        self.injection_command = np.random.choice(self.ATTACK_ACTION, np.random.randint(0, 2))
+        self.table = np.random.choice(TABLES)
+        # allowed table action
+        self.table_action = np.random.choice(self.gen_values.TABLE_ACTION)
+
+        # Get the injection command with proper escape included
+        '''
+        self.injection_command = ""
+        while not any(ext in self.injection_command[:4] for ext in self.escapes) \
+                and not any(ext in self.injection_command for ext in self.table) \
+                and not any(ext in self.injection_command for ext in self.table_action):
+            self.injection_command = np.random.choice(self.ATTACK_ACTION)  # , np.random.randint(0, 2)
+        '''
+
+        escape = np.random.choice(self.escapes)
+        i = np.random.choice(self.gen_values.num_actions)
+        self.injection_command = self.gen_values.attack_map[(escape, self.table, self.table_action, i)]
 
         # Return the initial observation
         return self._get_observation()
@@ -121,11 +141,11 @@ class SQLInjectionEnv(gym.Env):
         if command in self.ATTACK_ACTION:
             if escape in self.escapes:
                 if command in self.injection_command:
-                    return np.random.choice(FLAGS)
+                    return 1, np.random.choice(FLAGS)
                 else:
-                    return escape
+                    return 1, escape
             else:
-                return ""
+                return -1, ""
         elif escape in self.escapes:
             # Get possible error messages for the given command and database type
             error = self.error_messages[command][self.db_type]
@@ -135,34 +155,72 @@ class SQLInjectionEnv(gym.Env):
             # error_subset = random.sample(possible_errors, num_errors)
 
             # Concatenate the error messages and return as a single string
-            return ("\n".join(error)).lower()
+            return 1, ("\n".join(error)).lower()
         else:
-            return ""
+            return -1, ""
 
-    def _calculate_reward(self, error):
+    def _calculate_reward(self, action, error):
         if error == "":
             return self.reward.nothing
 
+        reward = self.reward.nothing
+        self.state[action, -1] = -1
+
         for flag in FLAGS:
             if flag in error:
+                self.state[action, -1] = 10
                 return self.reward.error_values[self.reward.action_type(flag)]
+
         for table in TABLES:
-            if table in error:
+            if table in error and table == self.table:
                 if self.verbose: print(f"TABLES:  {table}  FOUND!")
-                return self.reward.error_values[self.reward.table_type(table)]
-        for action in self.ACTIONS:
-            if action in error:
-                if self.verbose: print(f"ACTIONS:  {action}  FOUND!")
-                return self.reward.error_values[self.reward.action_type(action)]
+
+                if table in self.table:
+                    self.state[action, -1] = max(10, self.state[action, -1])
+                else:
+                    self.state[action, -1] = max(1, self.state[action, -1])
+
+                reward = max(reward, self.reward.error_values[self.reward.table_type(table)])
+                self.reward.error_values[self.reward.table_type(table)] = 0
+
+                if reward > 0:
+                    return reward
+
+        for _action in self.ACTIONS:
+            if _action in error:
+                if self.verbose: print(f"ACTIONS:  {_action}  FOUND!")
+
+                if _action in self.table_action:
+                    self.state[action, -1] = max(10, self.state[action, -1])
+                else:
+                    self.state[action, -1] = max(1, self.state[action, -1])
+
+                reward = max(reward, self.reward.error_values[self.reward.action_type(_action)])
+                self.reward.error_values[self.reward.action_type(_action)] = 0
+
+                if reward > 0:
+                    return reward
+
         for db_type in DATABASES:
             if db_type.lower() in error:
                 if self.verbose: print(f"DATABASES:  {db_type}  FOUND!")
-                return self.reward.db_type
+                self.state[action, -1] = max(10, self.state[action, -1])
+                reward = max(reward, self.reward.db_type)
+                self.reward.db_type = 0
+
+                if reward > 0:
+                    return reward
+
         for escape in ESCAPE_CHAR:
             if escape in error:
-                return self.reward.error_values[self.reward.escape_type(escape)]
+                self.state[action, -1] = max(1, self.state[action, -1])
+                reward = max(reward, self.reward.error_values[self.reward.escape_type(escape)])
+                self.reward.error_values[self.reward.escape_type(escape)] = 0
 
-        return self.reward.nothing
+                if reward > 0:
+                    return reward
+
+        return reward
 
     def _get_observation(self):
         # Return the current error message and reward as the observation
