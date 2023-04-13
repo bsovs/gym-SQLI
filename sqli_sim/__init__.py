@@ -12,3 +12,7 @@ register(
     id='db_sim-v1',
     entry_point='sqli_sim.envs:SQLInjectionEnv',
 )
+register(
+    id='db_sim-v2',
+    entry_point='sqli_sim.envs:SQLInjectionFlagEnv',
+)

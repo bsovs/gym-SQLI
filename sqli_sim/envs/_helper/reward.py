@@ -11,12 +11,12 @@ class Reward:
 
 
 class ErrorReward:
-    def __init__(self):
-        self.nothing = -1
-        self.db_type = 2
-        self.flag = 100
-        self.escape = 1
-        self.table = 2
+    def __init__(self, nothing=-1, db_type=2, flag=100, escape=1, table=2):
+        self.nothing = nothing
+        self.db_type = db_type
+        self.flag = flag
+        self.escape = escape
+        self.table = table
 
         escape_values = {self.escape_type(escape): self.escape for escape in ESCAPE_CHAR}
         table_values = {self.action_type(action): self.escape for action in TABLE_ACTION}

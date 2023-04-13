@@ -1,5 +1,6 @@
 # Define the error messages that can be returned by the database
 import random
+from collections import defaultdict
 
 DATABASES = ["MySQL", "PostgreSQL", "SQL Server"]
 ESCAPE_CHAR = [
@@ -70,6 +71,46 @@ class Attack:
         self.ATTACK_ACTION = list(self.attack_map.values())
         self.TABLE_ACTION = TABLE_ACTION
         self.ACTIONS = self.TABLE_ACTION + self.ATTACK_ACTION
+
+        self.escape_map = {
+            escape: (escape, self.attack_map[(escape, table, table_action, i)])
+            for i in range(self.num_actions) for
+            escape in ESCAPE_CHAR for
+            table in TABLES for
+            table_action in TABLE_ACTION
+        }
+
+        self.escape_map = defaultdict(list)
+        for i in range(self.num_actions):
+            for escape in ESCAPE_CHAR:
+                for table in TABLES:
+                    for table_action in TABLE_ACTION:
+                        self.escape_map[escape].append((escape, self.attack_map[(escape, table, table_action, i)]))
+
+        self.escape_list = []
+        for escape in self.escape_map:
+            self.escape_list += [(escape, None)]
+            for table_action in TABLE_ACTION:
+                self.escape_list.append((escape, table_action))
+            for table_action in TABLE_ACTION:
+                for table in TABLES:
+                    self.escape_list.append((escape, f"{table_action} IN '{table}'"))
+            for table_action in TABLE_ACTION:
+                for table in TABLES:
+                    self.escape_list.append((escape, self.generate_attack_string(escape, table, table_action)))
+            # self.escape_list += self.escape_map[escape]
+
+        self.FLAG_ATTACK = []
+        self.flag_map = {}
+        for action, (escape, injection) in enumerate(self.escape_list):
+            if 21 > action % 37 > 0:
+                f = action % 37
+                e = action // 37
+                if 5 > f > 0:
+                    pass
+                else:
+                    self.flag_map[(f, e)] = action + 16
+                    self.FLAG_ATTACK.append(self.escape_list[action + 16][1])
 
     def generate_attack_string(self, escape_char, table, table_action):
         where_clause = 'WHERE ' + table + '.id = 1'
@@ -203,5 +244,19 @@ def error_messages():
                     errors.append(error_msg)
 
             msgs[operation][db] = random.choice(errors)
+
+    return msgs
+
+
+def table_error_messages():
+    msgs = {}
+    for operation in TABLE_ACTION:
+        msgs[operation] = {}
+        for db in DATABASES:
+            msgs[operation][db] = {}
+            for table in TABLES:
+                msgs[operation][db][table] = f"{db} ERROR: FOR {operation} IN '{table}'"
+
+            msgs[operation][db][None] = f"{db} ERROR: NEAR {operation}"
 
     return msgs
