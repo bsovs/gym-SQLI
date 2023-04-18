@@ -16,20 +16,23 @@ Clone this git and run `pip install -r requirements.txt`
 
 ### Content
 
-Error Message Env [run test](./tests/backtest_error.py)
+#### Error Message Env [run test](./tests/backtest_error.py)
 
 - Run model on simulation env over an action space to find SQL error messages
 - [gym env](./sqli_sim/envs/error_env.py)
 
 Run tersorboard graphs: ` tensorboard --logdir=./tests/logs/reward/ --port=6006`
 
-Flag Env (wip) [run test](./tests/backtest_error_flag.py)
+#### Flag Env (wip) [run test](./tests/backtest_error_flag.py)
 
 - Run model on simulation env to use error messages (observations) to find a flag via SQLI
 - PPO and DQN models available
 - [gym env](./sqli_sim/envs/error_flag_env.py)
 
 Run tersorboard graphs: ` tensorboard --logdir=./tests/logs/flag/ --port=6006`
+
+#### Error Message Generation: [Error Msg](./sqli_sim/envs/_helper/error_message.py) 
+Used for both environments to create the dict or possible error message values to their associated actions.
 
 ## Experiments
 
