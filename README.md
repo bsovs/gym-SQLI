@@ -12,7 +12,7 @@ The following code requires *numpy* and [opanai gym](https://www.gymlibrary.dev/
 
 ### Installation
 
-Clone this git and run `pip install -e gym-SQLI` to make this environment available to *OpenAI gym*.
+Clone this git and run `pip install -r requirements.txt`
 
 ### Content
 
